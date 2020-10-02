@@ -24,9 +24,11 @@ SELECT * FROM department
 	Напишіть запит для отримання номерів працівників, номерів проектів і назв робіт для працівників,
 	які витратили НЕ найбільше часу для роботи над одним з цих проектів
 */
-SELECT * FROM employee
-WHERE emp_no IN (SELECT TOP 5 emp_no FROM works_on
-				ORDER BY enter_date DESC)
+SELECT emp_no, project_no, job
+FROM works_on
+WHERE emp_no != (SELECT TOP 1 emp_no
+				FROM works_on
+				ORDER BY enter_date)
 
 /* 4
 	Напишіть запит для отримання імен, прізвищ та номерів всіх працівників, у яких друга буква імені «а».
@@ -65,9 +67,8 @@ WHERE emp_no NOT IN (10102, 9031)
 /* 9
 	Напишіть запит для обчислення суми всіх бюджетів всіх проектів
 */
-SELECT project_no, SUM(budget) AS total_budget
+SELECT SUM(budget) AS total_budget
 FROM project
-GROUP BY project_no
 
 /* 10
 	Напишіть запит для отримання номерів працівників, які працюють над проектом p1 і/або проектом p2
@@ -113,21 +114,34 @@ WHERE dept_no != 'd2'
 	Напишіть запит для отримання назв всіх проектів з бюджетом, меншим ніж $100 000 і більшим, ніж $150 000
 */
 SELECT project_name FROM project 
-WHERE budget BETWEEN 100000 AND 150000
+WHERE budget < 100000
+AND budget > 150000
 
 /* 17
 	Напишіть запит для отримання імен і прізвищ працівників, що працюють у відділі Research
 */
-SELECT * FROM employee 
-WHERE dept_no = (SELECT dept_no FROM department 
-				WHERE dept_name = 'research')
+SELECT emp_fname, emp_lname
+FROM employee 
+WHERE EXISTS (SELECT *
+			FROM department 
+			WHERE employee.dept_no = department.dept_no
+			AND dept_name = 'research')
 
 /* 18
 	Напишіть запит для отримання всіх даних про працівника на посаді менеджера, який останнім отримав цю посаду
 */
-SELECT * FROM employee 
-WHERE emp_no = (SELECT TOP 1 emp_no FROM works_on 
-				ORDER BY enter_date DESC)
+--запит для отримання всіх даних про працівника на посаді менеджера
+SELECT * FROM employee
+WHERE EXISTS (SELECT *
+			FROM works_on
+			WHERE employee.emp_no = works_on.emp_no
+			AND job = 'manager')
+
+SELECT * FROM employee
+WHERE emp_no IN (SELECT TOP 1 emp_no
+			FROM works_on
+			WHERE job = 'manager'
+			ORDER BY enter_date)
 
 /* 19
 	Напишіть запит для отримання назв і бюджетів всіх проектів з бюджетом в діапазоні від $95 000 до $120 000 включно
@@ -139,9 +153,8 @@ WHERE budget BETWEEN 95000 AND 120000
 /* 20
 	Напишіть запит для отримання переліку всіх різних робіт для всіх працівників
 */
-SELECT DISTINCT emp_no, job
+SELECT DISTINCT job
 FROM works_on
-ORDER BY emp_no
 
 /* 21
 	Напишіть запит для отримання списку працівників, що працюють над проектом p1 і відповідних робіт, які вони виконують.
@@ -169,7 +182,9 @@ WHERE job IS NULL AND project_no = 'p2'
 /* 24
 	Напишіть запит для обчислення середнього значення всіх бюджетів, більших за $100 000
 */
-SELECT * FROM project
+SELECT AVG(budget)
+FROM project
+WHERE budget > 100000
 
 /* 25
 	Напишіть запит для отримання номера та прізвища працівника з найменшим номером
@@ -182,9 +197,11 @@ ORDER BY emp_no
 	Напишіть запит для отримання прізвищ всіх працівників, що працюють над проектом Apollo
 */
 SELECT emp_fname FROM employee
-WHERE emp_no	 IN (SELECT emp_no FROM works_on
-				WHERE project_no IN (SELECT project_no FROM project
-									WHERE project_name = 'Appolo'))
+WHERE EXISTS (SELECT * FROM works_on
+			WHERE employee.emp_no = works_on.emp_no
+			AND EXISTS (SELECT * FROM project
+						WHERE works_on.project_no = project.project_no
+						AND project_name = 'Appolo'))
 
 /* 27
 	Напишіть запит для отримання номерів відділів, імен та прізвищ тих працівників, у яких номери менші, ніж 20 000,
@@ -213,8 +230,10 @@ ORDER BY emp_quantity DESC
 /* 30
 	Напишіть запит для отримання повних даних про всіх працівників, чиє відділення знаходиться у Далласі
 */
-SELECT * FROM department 
-WHERE location = 'Dallas'
+SELECT * FROM employee
+WHERE EXISTS (SELECT * FROM department
+			WHERE employee.dept_no = department.dept_no
+			AND location = 'Dallas')
 
 /* 31
 	Напишіть запит для отримання номерів, імен та прізвищ всіх працівників,
