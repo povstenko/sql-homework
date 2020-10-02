@@ -1,2 +1,2 @@
-# sql-homework
-SQL Homeworks
+# SQL Labs
+SQL Homework laboratories in IT STEP University
