@@ -8,7 +8,7 @@ CREATE TABLE employee (
 	lname nvarchar(255),
 	job_id int,
 	job_lvl nvarchar(255),
-	pub_id int FOREIGN KEY REFERENCES publishers(pub_id),--fk
+	pub_id int FOREIGN KEY REFERENCES publishers(pub_id),
 	hire_date datetime,
 )
 
