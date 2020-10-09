@@ -8,7 +8,7 @@ CREATE TABLE employee (
 	lname nvarchar(255),
 	job_id int,
 	job_lvl nvarchar(255),
-	pub_id int,--fk
+	pub_id int FOREIGN KEY REFERENCES publishers(pub_id),--fk
 	hire_date datetime,
 )
 
@@ -26,11 +26,11 @@ CREATE TABLE pub_info (
 	pr_info nvarchar(255)
 )
 
-CREATE TABLE title (
+CREATE TABLE titles (
 	title_id int primary key identity,
 	title nvarchar(255),
 	[type] nvarchar(255),
-	pub_id int,--fk
+	pub_id int FOREIGN KEY REFERENCES publishers(pub_id),
 	price money,
 	advance money,
 	royalty money,
@@ -45,8 +45,9 @@ CREATE TABLE sales (
 	ord_date datetime,
 	qty int,
 	payterms nvarchar(255),
-	title_id int--fk
+	title_id int FOREIGN KEY REFERENCES titles(title_id)
 )
+
 CREATE TABLE stores (
 	stor_id int primary key identity,
 	stor_name nvarchar(50),
@@ -58,7 +59,7 @@ CREATE TABLE stores (
 
 CREATE TABLE discounts (
 	discounttype nvarchar(255),
-	stor_id int,--fk
+	stor_id int FOREIGN KEY REFERENCES stores(stor_id),
 	lowqty int,
 	highqty int,
 	discount money
