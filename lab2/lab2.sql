@@ -1,6 +1,14 @@
 CREATE DATABASE test_db
 USE test_db
 
+CREATE TABLE publishers (
+	pub_id int primary key identity not null,
+	pub_name nvarchar(50) not null,
+	city nvarchar(50) not null,
+	[state] nvarchar(50) not null,
+	country nvarchar(50) not null
+)
+
 CREATE TABLE employee (
 	emp_id int primary key identity not null,
 	fname nvarchar(255) not null,
@@ -10,14 +18,6 @@ CREATE TABLE employee (
 	job_lvl nvarchar(255) not null,
 	pub_id int foreign key references publishers(pub_id) not null,
 	hire_date date not null,
-)
-
-CREATE TABLE publishers (
-	pub_id int primary key identity not null,
-	pub_name nvarchar(50) not null,
-	city nvarchar(50) not null,
-	[state] nvarchar(50) not null,
-	country nvarchar(50) not null
 )
 
 CREATE TABLE pub_info (
@@ -64,4 +64,3 @@ CREATE TABLE discounts (
 	highqty int,
 	discount money not null
 )
-
