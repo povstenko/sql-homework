@@ -22,7 +22,7 @@ CREATE TABLE employee (
 	job_id int not null,
 	job_lvl nvarchar(50) not null,
 	pub_id int foreign key references publishers(pub_id) not null,
-	hire_date date not null,
+	hire_date date default GETDATE()
 )
 
 CREATE TABLE titles (
@@ -30,19 +30,19 @@ CREATE TABLE titles (
 	title nvarchar(50) not null,
 	[type] nvarchar(50) not null,
 	pub_id int foreign key references publishers(pub_id) not null,
-	price money not null,
-	advance money,
-	royalty money,
+	price money not null check(price>=0),
+	advance money check(advance>=0),
+	royalty money check(royalty>=0),
 	ytd_sales date not null,
 	notes nvarchar(255),
-	pubdate date not null
+	pubdate date default GETDATE()
 )
 
 CREATE TABLE sales (
 	stor_id int primary key identity not null,
 	ord_num int not null,
-	ord_date date not null,
-	qty int not null,
+	ord_date date default GETDATE(),
+	qty int not null check(qty>=0),
 	payterms nvarchar(255),
 	title_id int foreign key references titles(title_id) not null
 )
@@ -59,8 +59,8 @@ CREATE TABLE stores (
 CREATE TABLE discounts (
 	discounttype nvarchar(50) not null,
 	stor_id int foreign key references stores(stor_id) not null,
-	lowqty int,
-	highqty int,
+	lowqty int check(lowqty>=0),
+	highqty int check(highqty>=0),
 	discount money not null
 )
 
@@ -83,7 +83,7 @@ VALUES
 
 INSERT INTO employee
 VALUES
-('Alina', 0, 'Stoyakevych', 1, 'qwerty', 2, '10-08-2010'),
+('Alina', 0, 'Stoiakevych', 1, 'qwerty', 2, '10-08-2010'),
 ('John', 0, 'Doe', 1, 'lvl', 3, '10-10-2020'),
 ('Tony', 0, 'Taylor', 10, 'lvl', 4, '11-10-1999')
 
