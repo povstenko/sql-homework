@@ -117,4 +117,32 @@ SELECT * FROM employee
 
 --12.	Створіть представлення (з опцією WITH CHECK OPTION) з усіма подробицями з таблиці works_on для всіх всіх співробітників, які почали працювати над проектами в період з  2007 до 2008 року. Після цього змініть дату початку роботи над проектом у співробітника з номером 29346. Нова дата має бути 06/01/2006.
 GO
-SELECT * FROM 
+CREATE VIEW worksCheckV
+	AS SELECT emp_no, project_no, job, enter_date
+		FROM works_on
+		WHERE enter_date
+		BETWEEN '01.01.2007' AND '12.31.2008'
+		WITH CHECK OPTION
+GO
+SELECT * FROM worksCheckV
+
+UPDATE worksCheckV
+	SET enter_date = '06.01.2006'
+	WHERE emp_no = 29346
+
+--13.	Використайте представлення з вправи 12 без без опції WITH CHECK OPTION та знайдіть відмінність у додаванні даних.
+GO
+CREATE VIEW worksNoCheckV
+	AS SELECT emp_no, project_no, job, enter_date
+		FROM works_on
+		WHERE enter_date
+		BETWEEN '01.01.2007' AND '12.31.2008'
+
+GO
+SELECT * FROM worksNoCheckV
+
+UPDATE worksNoCheckV
+	SET enter_date = '06.01.2006'
+	WHERE emp_no = 29346
+
+SELECT * FROM works_on
