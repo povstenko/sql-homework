@@ -146,3 +146,64 @@ UPDATE worksNoCheckV
 	WHERE emp_no = 29346
 
 SELECT * FROM works_on
+
+
+--Trigers
+-----------------------------------------------------------
+--1.	Використовуючи тригери, визначити цілісність посилань даних для первинного ключа таблиці department, стовпця dept_no, який є зовнішнім ключем таблиці works_on.
+GO
+CREATE TRIGGER departmentTR
+	ON department AFTER INSERT, UPDATE
+	AS IF UPDATE(dept_no)
+		BEGIN
+		IF (SELECT w.emp_no FROM works_on w, inserted
+			WHERE w.emp_no = inserted.dept_no) IS NULL
+		BEGIN
+		ROLLBACK TRANSACTION
+		PRINT 'No insertion/modification of the row'
+		END
+	ELSE PRINT 'The row inserted/modified'
+	END
+
+--2.	За допомогою тригерів задати цілісність посилань даних для первинного ключа таблиці project, стовпця project_no, який є зовнішнім ключем таблиці works_on.
+GO
+CREATE TRIGGER projectTR
+	ON project AFTER INSERT, UPDATE
+	AS IF UPDATE(project_no)
+		BEGIN
+		IF (SELECT w.project_no FROM works_on w, inserted
+			WHERE w.project_no = inserted.project_no) IS NULL
+		BEGIN
+		ROLLBACK TRANSACTION
+		PRINT 'No insertion/modification of the row'
+		END
+	ELSE PRINT 'The row inserted/modified'
+	END
+
+--3.	Створити DDL тригер, який буде спрацьовувати кожен раз, коли в БД виконується інструкція DROP_TABLE або ALTER_TABLE – виводиться повідомлення, що даний 
+GO
+CREATE TRIGGER [safeTR]
+ON DATABASE
+FOR DROP_TABLE, ALTER_TABLE
+AS
+	PRINT 'error by safeTR'
+	ROLLBACK
+
+ALTER TABLE department
+ADD TEST varchar(255);
+
+
+--4.	Виконати запити до представлень каталогу sys.triggers та sys.trigger_events з метою визначення, які події мови Transact-SQL призвели до спрацювання тригеру з прикладу 3.
+SELECT * FROM sys.triggers
+SELECT * FROM sys.trigger_events
+
+--5.	Створити DDL тригер, який виводить повідомлення, якщо в поточному екземплярі серверу відбувається подія CREATE_DATABASE.
+GO
+CREATE TRIGGER createDbTR
+ON ALL SERVER
+FOR CREATE_DATABASE
+AS
+	PRINT 'error by createDbTR'
+	ROLLBACK
+
+CREATE DATABASE test
