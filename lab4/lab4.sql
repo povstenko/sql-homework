@@ -223,13 +223,169 @@ CREATE DATABASE test
 USE AdventureWorks2012
 
 --6.	Створити тригер DМL, який відправляє клієнту повідомлення, якщо хтось намагається додати чи змінити дані в таблиці Customer.
+SELECT * FROM Sales.Customer
+
+GO
+CREATE TRIGGER CustomerInsertTR
+ON Sales.Customer
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	PRINT 'Table Sales.Customer was UPDATED/INSERTED'
+END
+
+UPDATE Sales.Customer
+SET PersonID = 1--NULL
+WHERE CustomerID = 1
+
+
 
 
 --7.	Створити тригер DМL, який відправляє вказаному користувачеві (MaryM) повідомлення на електронну пошту, якщо хтось намагається змінити дані в таблиці Customer.
+GO
+CREATE VIEW MaryEmailV
+AS SELECT FirstName, MiddleName, LastName, EmailAddress Email FROM Person.Person p
+	INNER JOIN Person.EmailAddress e
+	ON p.BusinessEntityID = e.BusinessEntityID
+	WHERE FirstName = 'Mary' AND MiddleName = 'M'
 
+GO
+SELECT * FROM MaryEmailV
+
+GO
+CREATE TRIGGER CustomerUpdateNotifyTR
+ON Sales.Customer AFTER UPDATE
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	declare @email NVARCHAR(255)
+	SELECT @email = Email
+	FROM MaryEmailV
+
+	EXEC msdb.dbo.sp_send_dbmail
+		@profile_name = 'AdventureWorks2012 Admin',
+		@recipients = @email,
+		@subject = 'DB Update',
+		@body = 'Table Sales.Customer was UPDATED',
+		@importance = 'HIGH'
+END
+
+--DROP TRIGGER CustomerAlterNotifyTR
+
+
+UPDATE Sales.Customer
+SET PersonID = 1--NULL
+WHERE CustomerID = 1
 
 --8.	Створити тригер DМL, який перевіряє рівень кредитоспроможності постачальника під час спроби додати нове замовлення на покупку в таблицю PurchaseOrderHeader. Для отримання відомостей про кредитоспроможність постачальника необхідне посилання на таблицю Vendor. Якщо кредитоспроможність є занадто низькою – виводиться відповідне повідомлення та вставка не відбувається.
+GO
+SELECT *
+FROM Purchasing.PurchaseOrderHeader poh
+INNER JOIN Purchasing.Vendor v
+ON poh.VendorID = v.BusinessEntityID
+
+GO
+CREATE VIEW GoodCreditRateV
+AS SELECT VendorID, CreditRating
+	FROM Purchasing.PurchaseOrderHeader poh
+	INNER JOIN Purchasing.Vendor v
+	ON poh.VendorID = v.BusinessEntityID
+	WHERE CreditRating > 2
+
+SELECT * FROM GoodCreditRateV
+
+GO
+CREATE TRIGGER CheckCreditRateTR
+ON Purchasing.PurchaseOrderHeader
+FOR INSERT
+AS
+BEGIN
+	IF(SELECT i.VendorID FROM INSERTED i
+		INNER JOIN GoodCreditRateV gcr
+		ON i.VendorID = gcr.VendorID) IS NULL
+		BEGIN
+			ROLLBACK TRANSACTION
+			PRINT 'Vendor`s Credit Rate is low!'
+		END
+END
+
+GO
+INSERT INTO [Purchasing].[PurchaseOrderHeader]
+           ([RevisionNumber]
+           ,[Status]
+           ,[EmployeeID]
+           ,[VendorID]
+           ,[ShipMethodID]
+           ,[OrderDate]
+           ,[ShipDate]
+           ,[SubTotal]
+           ,[TaxAmt]
+           ,[Freight]
+           ,[ModifiedDate])
+     VALUES
+           (4
+           ,4
+           ,250
+           ,1580
+           ,3
+           ,'2020-04-16 00:00:00.000'
+           ,'2020-04-25 00:00:00.000'
+           ,0
+           ,0
+           ,0
+           ,'2011-04-25 00:00:00.000')
+
+GO
+SELECT *
+FROM Purchasing.PurchaseOrderHeader
+ORDER BY [ShipDate] DESC
 
 
 --9.	Створити тригер, який забороняє створювати замовлення для товарів (продуктів), продаж яких зупинено (існує Discontinued Date)
+SELECT * FROM Production.Product
+WHERE DiscontinuedDate IS NOT NULL
 
+SELECT *
+FROM Production.WorkOrder wo
+LEFT JOIN Production.Product p
+ON wo.ProductID = p.ProductID
+
+
+
+GO
+CREATE TRIGGER ProductDiscontinuedCheckV
+ON Production.WorkOrder
+FOR INSERT
+AS
+BEGIN
+	IF(SELECT i.ProductID FROM INSERTED i
+		INNER JOIN Production.Product p
+		ON i.ProductID = p.ProductID
+		WHERE DiscontinuedDate IS NULL) IS NULL
+		BEGIN
+			ROLLBACK TRANSACTION
+			PRINT 'Discontinued Date of this product exists'
+		END
+END
+
+
+INSERT INTO [Production].[WorkOrder]
+           ([ProductID]
+           ,[OrderQty]
+           ,[ScrappedQty]
+           ,[StartDate]
+           ,[EndDate]
+           ,[DueDate]
+           ,[ScrapReasonID]
+           ,[ModifiedDate])
+     VALUES
+           (722
+           ,1
+           ,0
+           ,'2020-06-03 00:00:00.000'
+           ,'2020-06-13 00:00:00.000'
+           ,'2020-06-14 00:00:00.000'
+           ,NULL
+           ,'2020-06-13 00:00:00.000')
+GO
